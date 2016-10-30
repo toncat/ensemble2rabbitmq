@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736U)" ts="2016-10-29 06:10:16">
+<Class name="RabbitMQ.Java.HelloWorld">
+<Super>%RegisteredObject</Super>
+<TimeChanged>64220,21207.113436</TimeChanged>
+<TimeCreated>62668,23236.789256</TimeCreated>
+
+<Parameter name="CLASSPATH">
+<Default>C:\rabbitmq-java-client-bin-3.6.5\myorgname-rabbitmq-wrapper.jar</Default>
+</Parameter>
+
+<Parameter name="HOST">
+<Default>localhost</Default>
+</Parameter>
+
+<Parameter name="QUEUE">
+<Default>hello</Default>
+</Parameter>
+
+<Method name="SendMsg">
+<Description>
+s sc=##class(RabbitMQ.Java.HelloWorld).SendMsg()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pMsg="Hello from Ensemble!"</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim tGateway as %Net.Remote.Gateway
+	#dim tException as %Exception.AbstractException
+	
+	Set tSC=$$$OK
+	Try	{
+		Set tGateway=..Connect()
+		Set tRabbitMQWrapper=##class(com.myorgname.rabbitmq.Wrapper).%New(tGateway)
+		//*** Do not use this syntax. It does not work! ***
+		//		Set tByteStream=##class(%Library.GlobalBinaryStream).%New("Hello World!")
+		// ************************************************
+		Set tByteStream=##class(%Library.GlobalBinaryStream).%New()
+		Set tSC = tByteStream.Write(pMsg)
+		Do tRabbitMQWrapper.sendMsg(..#HOST,..#QUEUE, tByteStream)
+		Write !,"Sent message via "_tByteStream.Read()
+
+		Set tSC=tGateway.%Disconnect()
+		
+	} Catch tException {
+		Set tSC = tException.AsStatus()
+	}
+	
+	Quit tSC
+]]></Implementation>
+</Method>
+
+<Method name="ReadMsg">
+<Description>
+s sc=##class(RabbitMQ.Java.HelloWorld).ReadMsg()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pMsgLen=32000</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim tGateway as %Net.Remote.Gateway
+	#dim tException as %Exception.AbstractException
+
+	Set tSC=$$$OK
+	Try	{
+		Set tGateway=..Connect()
+		Set tRabbitMQWrapper=##class(com.myorgname.rabbitmq.Wrapper).%New(tGateway)
+
+		Set tReadStream=##class(%GlobalBinaryStream).%New()
+		// we need to 'reserve' a number of bytes since we are passing the stream
+		// by reference (Java's equivalent is byte[] ba = new byte[max];)
+		For i=1:1:pMsgLen Do tReadStream.Write("0")
+		
+		Set tBytesRead=tRabbitMQWrapper.readMsg(..#HOST,..#QUEUE, .tReadStream)
+		Write tReadStream.Read(tBytesRead),!
+		Write "Bytes Read: ",tBytesRead,!
+
+		Set tSC=tGateway.%Disconnect()
+
+	} Catch tException {
+		Set tSC = tException.AsStatus()
+	}
+
+	Quit tSC
+]]></Implementation>
+</Method>
+
+<Method name="Connect">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pPort:%Integer=55555,pHost:%String="127.0.0.1"</FormalSpec>
+<ReturnType>%Net.Remote.Gateway</ReturnType>
+<Implementation><![CDATA[
+	// connect to current namespace, use 2 second timeout
+	Set tSC=$$$OK,tNamespace=$zu(5),tTimeout=2
+	Set tClassPath=##class(%ListOfDataTypes).%New()
+	Do tClassPath.Insert(..#CLASSPATH)
+
+	// get a connection handle and connect
+	Set tGateway=##class(%Net.Remote.Gateway).%New()
+	Set tSC=tGateway.%Connect(pHost,pPort,tNamespace,tTimeout,tClassPath)
+	If tSC'=$$$OK {
+		Write $system.OBJ.DisplayError(tSC)
+		Set tGateway=""
+	}
+	Quit tGateway
+]]></Implementation>
+</Method>
+
+<Method name="TestRead">
+<Description>
+s sc=##class(RabbitMQ.Java.HelloWorld).TestRead()</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set tSC = $$$OK
+	
+	Set tGateway=..Connect()
+	Set tRabbitMQWrapper=##class(com.myorgname.rabbitmq.Wrapper).%New(tGateway)
+
+	/*
+	// byte[] is mapped as %GlobalBinaryStream
+	Write !,"Byte array test:",!
+	Set tByteStream=##class(%GlobalBinaryStream).%New()
+	Do tByteStream.Write("Global binary stream")
+	// Note that tByteStream is passed in by value, so any changes on the Java
+	// side will be ignored. The next example will pass the stream by reference
+	// meaning changes on the Java side will be reflected here as well
+	Do test.setByteArray(tByteStream)
+	Set result=test.getByteArray()
+	Write result.Read(result.SizeGet()),!
+	*/
+	
+	Set tReadStream=##class(%GlobalBinaryStream).%New()
+	// we need to 'reserve' a number of bytes since we are passing the stream
+	// by reference (Java's equivalent is byte[] ba = new byte[max];)
+	For i=1:1:50 Do tReadStream.Write("0")
+	
+	Set tBytesRead=mq.read(.tReadStream,50)
+	Write tReadStream.Read(tBytesRead),!
+
+	Set tSC=tGateway.%Disconnect()
+
+	Quit tSC
+]]></Implementation>
+</Method>
+</Class>
+</Export>

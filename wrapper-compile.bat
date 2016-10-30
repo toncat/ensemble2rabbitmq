@@ -1,0 +1,1 @@
+javac -verbose -cp c:\rabbitmq-java-client-bin-3.6.5\rabbitmq-client.jar com\myorgname\rabbitmq\Wrapper.java
