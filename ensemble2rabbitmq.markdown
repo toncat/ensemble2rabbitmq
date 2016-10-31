@@ -1,6 +1,6 @@
 A quick start guide to connect Ensemble to RabbitMQ using the RabbitMQ Java Client, a Java proxy class and the Ensemble Java Gateway.
 
-Word and PDF documentation, source code and utility available at https://github.com/toncat/ensemble2rabbitmq.
+Word and PDF documentation, source code and utilities available at https://github.com/toncat/ensemble2rabbitmq.
 
 - - -
 #Software Versions
